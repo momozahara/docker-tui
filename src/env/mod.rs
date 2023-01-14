@@ -30,7 +30,11 @@ pub fn load_name() -> Vec<String> {
             continue;
         }
 
-        files.push(name.into_string().unwrap());
+        let mut name = name.into_string().unwrap();
+        let name_split: Vec<&str> = name.split('.').collect();
+        name = String::from(name_split[0]);
+
+        files.push(name);
     }
 
     files

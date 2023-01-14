@@ -1,10 +1,11 @@
 mod env;
+mod event;
 mod ui;
 
 use std::io;
 
 use crossterm::{
-    event::{DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
+    event::{DisableMouseCapture, EnableMouseCapture, Event},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
@@ -50,6 +51,7 @@ pub struct App {
     user_profile: UserProfile,
     list_profile: Vec<String>,
     input_mode: InputMode,
+    window_should_close: bool,
 }
 
 impl Default for App {
@@ -60,6 +62,7 @@ impl Default for App {
             user_profile: UserProfile::default(),
             list_profile: Vec::new(),
             input_mode: InputMode::Normal,
+            window_should_close: false,
         }
     }
 }
@@ -71,6 +74,25 @@ pub struct UserProfile {
     path: String,
     rmi: bool,
     target: String,
+}
+
+impl UserProfile {
+    fn set(
+        &mut self,
+        profile: String,
+        username: String,
+        hostname: String,
+        path: String,
+        rmi: bool,
+        target: String,
+    ) {
+        self.profile = profile;
+        self.username = username;
+        self.hostname = hostname;
+        self.path = path;
+        self.rmi = rmi;
+        self.target = target;
+    }
 }
 
 impl Default for UserProfile {
@@ -146,7 +168,7 @@ fn main() {
     let mut terminal = Terminal::new(backend).unwrap();
 
     let app = App::default();
-    let res = run_app(&mut terminal, app);
+    run_app(&mut terminal, app).unwrap();
 
     disable_raw_mode().unwrap();
     execute!(
@@ -156,196 +178,39 @@ fn main() {
     )
     .unwrap();
     terminal.show_cursor().unwrap();
-
-    if let Err(err) = res {
-        println!("{:?}", err);
-    }
 }
 
 fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<()> {
     app.selected_state.current.select(Some(0));
     loop {
+        if app.window_should_close {
+            return Ok(());
+        }
+
         terminal.draw(|f| ui(f, &mut app)).unwrap();
 
         if let Ok(Event::Key(key)) = crossterm::event::read() {
             match app.current_block {
                 CurrentBlock::Main => {
-                    app.selected_state.set_max(5);
-                    match key.code {
-                        KeyCode::Esc | KeyCode::Char('q') => return Ok(()),
-                        KeyCode::Up | KeyCode::Char('k') => app.selected_state.prev(),
-                        KeyCode::Down | KeyCode::Char('j') => app.selected_state.next(),
-                        KeyCode::Enter | KeyCode::Char('e') => {
-                            app.user_profile = UserProfile::default();
-                            app.list_profile = env::load_name();
-                            app.list_profile.insert(0, "<new>".into());
-                            app.current_block = CurrentBlock::from_usize(
-                                app.selected_state.current.selected().unwrap() + 1,
-                            );
-                            app.selected_state.set_current(0);
-                        }
-                        _ => (),
-                    }
+                    event::main(&mut app, key);
                 }
                 CurrentBlock::Env => {
-                    app.selected_state.set_max(app.list_profile.len());
-                    match key.code {
-                        KeyCode::Esc | KeyCode::Char('q') => {
-                            app.current_block = CurrentBlock::Main;
-                            app.selected_state.set_current(0);
-                        }
-                        KeyCode::Up | KeyCode::Char('k') => app.selected_state.prev(),
-                        KeyCode::Down | KeyCode::Char('j') => app.selected_state.next(),
-                        KeyCode::Enter | KeyCode::Char('e') => {
-                            match app.selected_state.current.selected().unwrap() {
-                                0 => {
-                                    app.current_block = CurrentBlock::EnvEdit;
-                                    app.selected_state.set_current(0);
-                                }
-                                u => {
-                                    let s = app.list_profile[u].clone();
-                                    let split = s.as_str().split('.');
-                                    let collect: Vec<&str> = split.collect();
-                                    let profile = env::load(String::from(collect[0]));
-                                    app.user_profile.profile = String::from(collect[0]);
-                                    app.user_profile.username = profile[0].clone();
-                                    app.user_profile.hostname = profile[1].clone();
-                                    app.user_profile.path = profile[2].clone();
-                                    app.current_block = CurrentBlock::EnvEdit;
-                                    app.selected_state.set_current(0);
-                                }
-                            }
-                        }
-                        KeyCode::Backspace | KeyCode::Char('d') => {
-                            match app.selected_state.current.selected().unwrap() {
-                                0 => (),
-                                u => {
-                                    let s = app.list_profile[u].clone();
-                                    let split = s.as_str().split('.');
-                                    let collect: Vec<&str> = split.collect();
-                                    env::remove(String::from(collect[0]));
-                                    app.list_profile.remove(u);
-                                }
-                            }
-                        }
-                        _ => (),
-                    }
+                    event::env(&mut app, key);
                 }
                 CurrentBlock::EnvEdit => {
-                    app.selected_state.set_max(5);
-                    match app.input_mode {
-                        InputMode::Normal => match key.code {
-                            KeyCode::Esc | KeyCode::Char('q') => {
-                                app.user_profile = UserProfile::default();
-                                app.list_profile = env::load_name();
-                                app.list_profile.insert(0, "<new>".into());
-                                app.current_block = CurrentBlock::Env;
-                                app.selected_state.set_current(0);
-                            }
-                            KeyCode::Up | KeyCode::Char('k') => app.selected_state.prev(),
-                            KeyCode::Down | KeyCode::Char('j') => app.selected_state.next(),
-                            KeyCode::Enter | KeyCode::Char('e') => {
-                                if app.selected_state.current.selected().unwrap() < 5 - 1 {
-                                    app.input_mode = InputMode::Insert;
-                                } else {
-                                    env::create(
-                                        app.user_profile.profile.clone(),
-                                        app.user_profile.username.clone(),
-                                        app.user_profile.hostname.clone(),
-                                        app.user_profile.path.clone(),
-                                    );
-                                    app.user_profile = UserProfile::default();
-                                    app.list_profile = env::load_name();
-                                    app.list_profile.insert(0, "<new>".into());
-                                    app.current_block = CurrentBlock::Env;
-                                    app.selected_state.set_current(0);
-                                }
-                            }
-                            _ => (),
-                        },
-                        InputMode::Insert => {
-                            let selected = app.selected_state.current.selected().unwrap();
-                            match selected {
-                                0..=3 => match key.code {
-                                    KeyCode::Enter | KeyCode::Esc => {
-                                        app.input_mode = InputMode::Normal
-                                    }
-                                    KeyCode::Char(c) => match selected {
-                                        0 => {
-                                            app.user_profile.profile.push(c);
-                                        }
-                                        1 => {
-                                            app.user_profile.username.push(c);
-                                        }
-                                        2 => {
-                                            app.user_profile.hostname.push(c);
-                                        }
-                                        3 => {
-                                            app.user_profile.path.push(c);
-                                        }
-                                        _ => unreachable!(),
-                                    },
-                                    KeyCode::Backspace => match selected {
-                                        0 => {
-                                            app.user_profile.profile.pop();
-                                        }
-                                        1 => {
-                                            app.user_profile.username.pop();
-                                        }
-                                        2 => {
-                                            app.user_profile.hostname.pop();
-                                        }
-                                        3 => {
-                                            app.user_profile.path.pop();
-                                        }
-                                        _ => unreachable!(),
-                                    },
-                                    _ => (),
-                                },
-                                _ => unreachable!(),
-                            }
-                        }
-                    }
+                    event::env_edit(&mut app, key);
                 }
                 CurrentBlock::Up => {
-                    app.selected_state.set_max(0);
-                    match key.code {
-                        KeyCode::Esc => {
-                            app.current_block = CurrentBlock::Main;
-                            app.selected_state.set_current(1);
-                        }
-                        _ => (),
-                    }
+                    event::up(&mut app, key);
                 }
                 CurrentBlock::Down => {
-                    app.selected_state.set_max(0);
-                    match key.code {
-                        KeyCode::Esc => {
-                            app.current_block = CurrentBlock::Main;
-                            app.selected_state.set_current(2);
-                        }
-                        _ => (),
-                    }
+                    event::down(&mut app, key);
                 }
                 CurrentBlock::Start => {
-                    app.selected_state.set_max(0);
-                    match key.code {
-                        KeyCode::Esc => {
-                            app.current_block = CurrentBlock::Main;
-                            app.selected_state.set_current(3);
-                        }
-                        _ => (),
-                    }
+                    event::start(&mut app, key);
                 }
                 CurrentBlock::Stop => {
-                    app.selected_state.set_max(0);
-                    match key.code {
-                        KeyCode::Esc => {
-                            app.current_block = CurrentBlock::Main;
-                            app.selected_state.set_current(4);
-                        }
-                        _ => (),
-                    }
+                    event::stop(&mut app, key);
                 }
             }
         }
