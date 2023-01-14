@@ -11,7 +11,9 @@ pub fn main(app: &mut App, key: KeyEvent) {
         KeyCode::Enter | KeyCode::Char('e') => {
             app.user_profile = UserProfile::default();
             app.list_profile = env::load_name();
-            app.list_profile.insert(0, "<new>".into());
+            if app.selected_state.current.selected() == Some(0) {
+                app.list_profile.insert(0, "<new>".into());
+            }
             app.current_block =
                 CurrentBlock::from_usize(app.selected_state.current.selected().unwrap() + 1);
             app.selected_state.set_current(0);
@@ -146,45 +148,53 @@ pub fn env_edit(app: &mut App, key: KeyEvent) {
 }
 
 pub fn up(app: &mut App, key: KeyEvent) {
-    app.selected_state.set_max(0);
+    app.selected_state.set_max(app.list_profile.len());
     match key.code {
-        KeyCode::Esc => {
+        KeyCode::Esc | KeyCode::Char('q') => {
             app.current_block = CurrentBlock::Main;
-            app.selected_state.set_current(1);
+            app.selected_state.set_current(0);
         }
+        KeyCode::Up | KeyCode::Char('k') => app.selected_state.prev(),
+        KeyCode::Down | KeyCode::Char('j') => app.selected_state.next(),
         _ => (),
     }
 }
 
 pub fn down(app: &mut App, key: KeyEvent) {
-    app.selected_state.set_max(0);
+    app.selected_state.set_max(app.list_profile.len());
     match key.code {
-        KeyCode::Esc => {
+        KeyCode::Esc | KeyCode::Char('q') => {
             app.current_block = CurrentBlock::Main;
-            app.selected_state.set_current(2);
+            app.selected_state.set_current(0);
         }
+        KeyCode::Up | KeyCode::Char('k') => app.selected_state.prev(),
+        KeyCode::Down | KeyCode::Char('j') => app.selected_state.next(),
         _ => (),
     }
 }
 
 pub fn start(app: &mut App, key: KeyEvent) {
-    app.selected_state.set_max(0);
+    app.selected_state.set_max(app.list_profile.len());
     match key.code {
-        KeyCode::Esc => {
+        KeyCode::Esc | KeyCode::Char('q') => {
             app.current_block = CurrentBlock::Main;
-            app.selected_state.set_current(3);
+            app.selected_state.set_current(0);
         }
+        KeyCode::Up | KeyCode::Char('k') => app.selected_state.prev(),
+        KeyCode::Down | KeyCode::Char('j') => app.selected_state.next(),
         _ => (),
     }
 }
 
 pub fn stop(app: &mut App, key: KeyEvent) {
-    app.selected_state.set_max(0);
+    app.selected_state.set_max(app.list_profile.len());
     match key.code {
-        KeyCode::Esc => {
+        KeyCode::Esc | KeyCode::Char('q') => {
             app.current_block = CurrentBlock::Main;
-            app.selected_state.set_current(4);
+            app.selected_state.set_current(0);
         }
+        KeyCode::Up | KeyCode::Char('k') => app.selected_state.prev(),
+        KeyCode::Down | KeyCode::Char('j') => app.selected_state.next(),
         _ => (),
     }
 }
