@@ -80,6 +80,13 @@ pub fn env_edit(app: &mut App, key: KeyEvent) {
                 if app.selected_state.current.selected().unwrap() < 5 - 1 {
                     app.input_mode = InputMode::Insert;
                 } else {
+                    if app.user_profile.profile.is_empty()
+                        | app.user_profile.username.is_empty()
+                        | app.user_profile.hostname.is_empty()
+                        | app.user_profile.path.is_empty()
+                    {
+                        return;
+                    }
                     env::create(
                         app.user_profile.profile.clone(),
                         app.user_profile.username.clone(),
