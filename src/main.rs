@@ -15,6 +15,7 @@ use tui::{
     Frame, Terminal,
 };
 
+#[derive(Debug)]
 pub enum CurrentBlock {
     Main,
     Env,
@@ -23,6 +24,10 @@ pub enum CurrentBlock {
     Start,
     Stop,
     EnvEdit,
+    UpTarget,
+    DownRmi,
+    StartTarget,
+    StopTarget,
 }
 
 impl CurrentBlock {
@@ -35,23 +40,28 @@ impl CurrentBlock {
             4 => CurrentBlock::Start,
             5 => CurrentBlock::Stop,
             6 => CurrentBlock::EnvEdit,
+            7 => CurrentBlock::UpTarget,
+            8 => CurrentBlock::DownRmi,
+            9 => CurrentBlock::StartTarget,
+            10 => CurrentBlock::StopTarget,
             _ => unreachable!(),
         }
     }
 }
 
+#[derive(Debug)]
 pub enum InputMode {
     Normal,
     Insert,
 }
 
+#[derive(Debug)]
 pub struct App {
     selected_state: SelectedState,
     current_block: CurrentBlock,
     user_profile: UserProfile,
     list_profile: Vec<String>,
     input_mode: InputMode,
-    window_should_close: bool,
 }
 
 impl Default for App {
@@ -62,17 +72,17 @@ impl Default for App {
             user_profile: UserProfile::default(),
             list_profile: Vec::new(),
             input_mode: InputMode::Normal,
-            window_should_close: false,
         }
     }
 }
 
+#[derive(Debug)]
 pub struct UserProfile {
     profile: String,
     username: String,
     hostname: String,
     path: String,
-    rmi: bool,
+    rmi: String,
     target: String,
 }
 
@@ -83,7 +93,7 @@ impl UserProfile {
         username: String,
         hostname: String,
         path: String,
-        rmi: bool,
+        rmi: String,
         target: String,
     ) {
         self.profile = profile;
@@ -92,6 +102,9 @@ impl UserProfile {
         self.path = path;
         self.rmi = rmi;
         self.target = target;
+    }
+    fn set_rmi(&mut self, rmi: String) {
+        self.rmi = rmi;
     }
 }
 
@@ -102,12 +115,13 @@ impl Default for UserProfile {
             username: String::new(),
             hostname: String::new(),
             path: String::new(),
-            rmi: false,
+            rmi: String::new(),
             target: String::new(),
         }
     }
 }
 
+#[derive(Debug)]
 pub struct SelectedState {
     max: usize,
     current: ListState,
@@ -183,35 +197,25 @@ fn main() {
 fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<()> {
     app.selected_state.current.select(Some(0));
     loop {
-        if app.window_should_close {
-            return Ok(());
-        }
-
         terminal.draw(|f| ui(f, &mut app)).unwrap();
 
         if let Ok(Event::Key(key)) = crossterm::event::read() {
-            match app.current_block {
-                CurrentBlock::Main => {
-                    event::main(&mut app, key);
-                }
-                CurrentBlock::Env => {
-                    event::env(&mut app, key);
-                }
-                CurrentBlock::EnvEdit => {
-                    event::env_edit(&mut app, key);
-                }
-                CurrentBlock::Up => {
-                    event::up(&mut app, key);
-                }
-                CurrentBlock::Down => {
-                    event::down(&mut app, key);
-                }
-                CurrentBlock::Start => {
-                    event::start(&mut app, key);
-                }
-                CurrentBlock::Stop => {
-                    event::stop(&mut app, key);
-                }
+            let result = match app.current_block {
+                CurrentBlock::Main => event::main(&mut app, key),
+                CurrentBlock::Env => event::env(&mut app, key),
+                CurrentBlock::EnvEdit => event::env_edit(&mut app, key),
+                CurrentBlock::Up => event::up(&mut app, key),
+                CurrentBlock::UpTarget => event::up_target(&mut app, key),
+                CurrentBlock::Down => event::down(&mut app, key),
+                CurrentBlock::DownRmi => event::down_rmi(&mut app, key),
+                CurrentBlock::Start => event::start(&mut app, key),
+                CurrentBlock::StartTarget => event::start_target(&mut app, key),
+                CurrentBlock::Stop => event::stop(&mut app, key),
+                CurrentBlock::StopTarget => event::stop_target(&mut app, key),
+            };
+            match result {
+                Some(r) => return r,
+                None => (),
             }
         }
     }
@@ -221,10 +225,14 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     match app.current_block {
         CurrentBlock::Main => ui::menu(f, app),
         CurrentBlock::Env => ui::env(f, app),
-        CurrentBlock::Up => ui::up(f, app),
-        CurrentBlock::Down => ui::down(f, app),
-        CurrentBlock::Start => ui::start(f, app),
-        CurrentBlock::Stop => ui::stop(f, app),
         CurrentBlock::EnvEdit => ui::env_edit(f, app),
+        CurrentBlock::Up => ui::up(f, app),
+        CurrentBlock::UpTarget => ui::up_target(f, app),
+        CurrentBlock::Down => ui::down(f, app),
+        CurrentBlock::DownRmi => ui::down_rmi(f, app),
+        CurrentBlock::Start => ui::start(f, app),
+        CurrentBlock::StartTarget => ui::start_target(f, app),
+        CurrentBlock::Stop => ui::stop(f, app),
+        CurrentBlock::StopTarget => ui::stop_target(f, app),
     };
 }
