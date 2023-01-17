@@ -1,3 +1,4 @@
+mod cli;
 mod env;
 mod event;
 mod ui;

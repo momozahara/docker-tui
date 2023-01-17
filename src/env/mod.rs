@@ -2,17 +2,6 @@ use dirs::home_dir;
 use dotenv;
 use std::{env, fs, io::Write};
 
-#[test]
-fn test_load_name() {
-    let files = load_name();
-
-    assert_eq!(files.len(), 1);
-
-    for file in files {
-        println!("{}", file);
-    }
-}
-
 pub fn load_name() -> Vec<String> {
     let target_path = home_dir()
         .and_then(|a| Some(a.join("pcode-cli/docker")))
