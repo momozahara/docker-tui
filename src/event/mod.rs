@@ -84,7 +84,7 @@ pub fn env_edit(app: &mut App, key: KeyEvent) -> Option<io::Result<()>> {
             KeyCode::Down | KeyCode::Char('j') => app.selected_state.next(),
             KeyCode::Enter | KeyCode::Char('e') => {
                 match app.selected_state.current.selected().unwrap() {
-                    0..=4 => app.input_mode = InputMode::Insert,
+                    0..=3 => app.input_mode = InputMode::Insert,
                     _ => {
                         if app.user_profile.profile.is_empty()
                             | app.user_profile.username.is_empty()
