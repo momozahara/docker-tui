@@ -1,6 +1,6 @@
 use std::{
     io::{self, Write},
-    process::{Command, Stdio},
+    process::Command,
 };
 
 pub fn up(username: String, hostname: String, path: String, target: Option<String>) {
