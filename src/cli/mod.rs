@@ -1,7 +1,11 @@
-use std::process::{Command, Output};
+use std::{
+    io::{self, Write},
+    process::{Command, Stdio},
+};
 
-pub fn up(username: String, hostname: String, path: String, target: Option<String>) -> Output {
+pub fn up(username: String, hostname: String, path: String, target: Option<String>) {
     let output = Command::new("ssh")
+        .stdin(Stdio::piped())
         .arg("-tt")
         .arg(format!("{}@{}", username, hostname))
         .arg(format!("cd {}", path))
@@ -13,13 +17,16 @@ pub fn up(username: String, hostname: String, path: String, target: Option<Strin
             }
             None => "".to_owned(),
         })
-        .output()
+        .spawn()
         .expect("command failed to start");
 
-    output
+    let output = output.wait_with_output().unwrap();
+
+    io::stdout().write_all(&output.stdout).unwrap();
+    io::stderr().write_all(&output.stderr).unwrap();
 }
 
-pub fn down(username: String, hostname: String, path: String, rmi: Option<String>) -> Output {
+pub fn down(username: String, hostname: String, path: String, rmi: Option<String>) {
     let output = Command::new("ssh")
         .arg("-tt")
         .arg(format!("{}@{}", username, hostname))
@@ -29,13 +36,16 @@ pub fn down(username: String, hostname: String, path: String, rmi: Option<String
             Some(r) => format!("--rmi {}", r),
             None => String::from(""),
         })
-        .output()
+        .spawn()
         .expect("command failed to start");
 
-    output
+    let output = output.wait_with_output().unwrap();
+
+    io::stdout().write_all(&output.stdout).unwrap();
+    io::stderr().write_all(&output.stderr).unwrap();
 }
 
-pub fn start(username: String, hostname: String, path: String, target: Option<String>) -> Output {
+pub fn start(username: String, hostname: String, path: String, target: Option<String>) {
     let output = Command::new("ssh")
         .arg("-tt")
         .arg(format!("{}@{}", username, hostname))
@@ -46,13 +56,16 @@ pub fn start(username: String, hostname: String, path: String, target: Option<St
             }
             None => "".to_owned(),
         })
-        .output()
+        .spawn()
         .expect("command failed to start");
 
-    output
+    let output = output.wait_with_output().unwrap();
+
+    io::stdout().write_all(&output.stdout).unwrap();
+    io::stderr().write_all(&output.stderr).unwrap();
 }
 
-pub fn stop(username: String, hostname: String, path: String, target: Option<String>) -> Output {
+pub fn stop(username: String, hostname: String, path: String, target: Option<String>) {
     let output = Command::new("ssh")
         .arg("-tt")
         .arg(format!("{}@{}", username, hostname))
@@ -63,8 +76,11 @@ pub fn stop(username: String, hostname: String, path: String, target: Option<Str
             }
             None => "".to_owned(),
         })
-        .output()
+        .spawn()
         .expect("command failed to start");
 
-    output
+    let output = output.wait_with_output().unwrap();
+
+    io::stdout().write_all(&output.stdout).unwrap();
+    io::stderr().write_all(&output.stderr).unwrap();
 }

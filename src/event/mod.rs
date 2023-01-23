@@ -2,7 +2,7 @@ use std::io;
 
 use crossterm::event::{KeyCode, KeyEvent};
 
-use crate::{cli, env, App, CurrentBlock, InputMode, UserProfile};
+use crate::{env, Action, App, CurrentBlock, InputMode, UserProfile};
 
 pub fn main(app: &mut App, key: KeyEvent) -> Option<io::Result<()>> {
     app.selected_state.set_max(5);
@@ -200,12 +200,7 @@ pub fn up_target(app: &mut App, key: KeyEvent) -> Option<io::Result<()>> {
                 match app.selected_state.current.selected().unwrap() {
                     0 => app.input_mode = InputMode::Insert,
                     1 => {
-                        app.output = Some(cli::up(
-                            app.user_profile.username.clone(),
-                            app.user_profile.hostname.clone(),
-                            app.user_profile.path.clone(),
-                            Some(app.user_profile.target.clone()),
-                        ));
+                        app.action = Action::Up;
                         return Some(Ok(()));
                     }
                     _ => unreachable!(),
@@ -284,32 +279,17 @@ pub fn down_rmi(app: &mut App, key: KeyEvent) -> Option<io::Result<()>> {
         KeyCode::Enter | KeyCode::Char('e') => {
             match app.selected_state.current.selected().unwrap() {
                 0 => {
-                    app.output = Some(cli::down(
-                        app.user_profile.username.clone(),
-                        app.user_profile.hostname.clone(),
-                        app.user_profile.path.clone(),
-                        None,
-                    ));
+                    app.action = Action::Down;
                     return Some(Ok(()));
                 }
                 1 => {
                     app.user_profile.set_rmi(String::from("local"));
-                    app.output = Some(cli::down(
-                        app.user_profile.username.clone(),
-                        app.user_profile.hostname.clone(),
-                        app.user_profile.path.clone(),
-                        Some(app.user_profile.rmi.clone()),
-                    ));
+                    app.action = Action::Down;
                     return Some(Ok(()));
                 }
                 2 => {
                     app.user_profile.set_rmi(String::from("all"));
-                    app.output = Some(cli::down(
-                        app.user_profile.username.clone(),
-                        app.user_profile.hostname.clone(),
-                        app.user_profile.path.clone(),
-                        Some(app.user_profile.rmi.clone()),
-                    ));
+                    app.action = Action::Down;
                     return Some(Ok(()));
                 }
                 _ => unreachable!(),
@@ -367,12 +347,7 @@ pub fn start_target(app: &mut App, key: KeyEvent) -> Option<io::Result<()>> {
                 match app.selected_state.current.selected().unwrap() {
                     0 => app.input_mode = InputMode::Insert,
                     1 => {
-                        app.output = Some(cli::start(
-                            app.user_profile.username.clone(),
-                            app.user_profile.hostname.clone(),
-                            app.user_profile.path.clone(),
-                            Some(app.user_profile.target.clone()),
-                        ));
+                        app.action = Action::Start;
                         return Some(Ok(()));
                     }
                     _ => unreachable!(),
@@ -453,12 +428,7 @@ pub fn stop_target(app: &mut App, key: KeyEvent) -> Option<io::Result<()>> {
                 match app.selected_state.current.selected().unwrap() {
                     0 => app.input_mode = InputMode::Insert,
                     1 => {
-                        app.output = Some(cli::stop(
-                            app.user_profile.username.clone(),
-                            app.user_profile.hostname.clone(),
-                            app.user_profile.path.clone(),
-                            Some(app.user_profile.target.clone()),
-                        ));
+                        app.action = Action::Stop;
                         return Some(Ok(()));
                     }
                     _ => unreachable!(),

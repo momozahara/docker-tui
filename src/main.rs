@@ -3,10 +3,7 @@ mod env;
 mod event;
 mod ui;
 
-use std::{
-    io::{self, Write},
-    process::Output,
-};
+use std::io;
 
 use crossterm::{
     event::{DisableMouseCapture, EnableMouseCapture, Event},
@@ -18,6 +15,15 @@ use tui::{
     widgets::ListState,
     Frame, Terminal,
 };
+
+#[derive(Debug)]
+pub enum Action {
+    None,
+    Up,
+    Down,
+    Start,
+    Stop,
+}
 
 #[derive(Debug)]
 pub enum CurrentBlock {
@@ -66,7 +72,7 @@ pub struct App {
     user_profile: UserProfile,
     list_profile: Vec<String>,
     input_mode: InputMode,
-    output: Option<Output>,
+    action: Action,
 }
 
 impl Default for App {
@@ -77,7 +83,7 @@ impl Default for App {
             user_profile: UserProfile::default(),
             list_profile: Vec::new(),
             input_mode: InputMode::Normal,
-            output: None,
+            action: Action::None,
         }
     }
 }
@@ -200,9 +206,40 @@ fn main() {
     terminal.show_cursor().unwrap();
 
     if res.is_ok() {
-        if let Some(output) = app.output {
-            io::stdout().write_all(&output.stdout).unwrap();
-            io::stderr().write_all(&output.stderr).unwrap();
+        match app.action {
+            Action::Up => cli::up(
+                app.user_profile.username.clone(),
+                app.user_profile.hostname.clone(),
+                app.user_profile.path.clone(),
+                Some(app.user_profile.target.clone()),
+            ),
+            Action::Down => match app.user_profile.rmi.as_str() {
+                "" => cli::down(
+                    app.user_profile.username.clone(),
+                    app.user_profile.hostname.clone(),
+                    app.user_profile.path.clone(),
+                    None,
+                ),
+                _ => cli::down(
+                    app.user_profile.username.clone(),
+                    app.user_profile.hostname.clone(),
+                    app.user_profile.path.clone(),
+                    Some(app.user_profile.rmi.clone()),
+                ),
+            },
+            Action::Start => cli::start(
+                app.user_profile.username.clone(),
+                app.user_profile.hostname.clone(),
+                app.user_profile.path.clone(),
+                Some(app.user_profile.target.clone()),
+            ),
+            Action::Stop => cli::stop(
+                app.user_profile.username.clone(),
+                app.user_profile.hostname.clone(),
+                app.user_profile.path.clone(),
+                Some(app.user_profile.target.clone()),
+            ),
+            _ => (),
         }
     }
 }
