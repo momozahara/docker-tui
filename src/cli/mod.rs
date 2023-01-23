@@ -5,7 +5,6 @@ use std::{
 
 pub fn up(username: String, hostname: String, path: String, target: Option<String>) {
     let output = Command::new("ssh")
-        .stdin(Stdio::piped())
         .arg("-tt")
         .arg(format!("{}@{}", username, hostname))
         .arg(format!("cd {}", path))
