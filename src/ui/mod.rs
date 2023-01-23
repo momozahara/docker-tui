@@ -237,6 +237,8 @@ pub fn up_target<B: Backend>(f: &mut Frame<B>, app: &mut App) {
 
     let menu_lists = match app.input_mode {
         InputMode::Normal => vec![
+            "Leave Empty for All",
+            "",
             "Up/K Down/J - Navigate",
             "Enter/E - Select/Edit",
             "Esc/Q - Return",
@@ -424,6 +426,8 @@ pub fn start_target<B: Backend>(f: &mut Frame<B>, app: &mut App) {
 
     let menu_lists = match app.input_mode {
         InputMode::Normal => vec![
+            "Leave Empty for All",
+            "",
             "Up/K Down/J - Navigate",
             "Enter/E - Select/Edit",
             "Esc/Q - Return",
@@ -522,6 +526,8 @@ pub fn stop_target<B: Backend>(f: &mut Frame<B>, app: &mut App) {
 
     let menu_lists = match app.input_mode {
         InputMode::Normal => vec![
+            "Leave Empty for All",
+            "",
             "Up/K Down/J - Navigate",
             "Enter/E - Select/Edit",
             "Esc/Q - Return",

@@ -3,7 +3,10 @@ mod env;
 mod event;
 mod ui;
 
-use std::io;
+use std::{
+    io::{self, Write},
+    process::Output,
+};
 
 use crossterm::{
     event::{DisableMouseCapture, EnableMouseCapture, Event},
@@ -63,6 +66,7 @@ pub struct App {
     user_profile: UserProfile,
     list_profile: Vec<String>,
     input_mode: InputMode,
+    output: Option<Output>,
 }
 
 impl Default for App {
@@ -73,6 +77,7 @@ impl Default for App {
             user_profile: UserProfile::default(),
             list_profile: Vec::new(),
             input_mode: InputMode::Normal,
+            output: None,
         }
     }
 }
@@ -182,8 +187,8 @@ fn main() {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend).unwrap();
 
-    let app = App::default();
-    run_app(&mut terminal, app).unwrap();
+    let mut app = App::default();
+    let res = run_app(&mut terminal, &mut app);
 
     disable_raw_mode().unwrap();
     execute!(
@@ -193,9 +198,16 @@ fn main() {
     )
     .unwrap();
     terminal.show_cursor().unwrap();
+
+    if res.is_ok() {
+        if let Some(output) = app.output {
+            io::stdout().write_all(&output.stdout).unwrap();
+            io::stderr().write_all(&output.stderr).unwrap();
+        }
+    }
 }
 
-fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<()> {
+fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: &mut App) -> io::Result<()> {
     app.selected_state.current.select(Some(0));
     loop {
         terminal.draw(|f| ui(f, &mut app)).unwrap();
