@@ -1,6 +1,4 @@
 # DOCKER-TUI
-
-Work in progress# DOCKER-TUI
 A tui that will execute docker compose command on server via [OpenSSH](https://man.openbsd.org/ssh.1).
 
 ### Requirements
