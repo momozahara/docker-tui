@@ -16,6 +16,3 @@ cargo install --git https://github.com/momozahara/docker-tui.git
 ```bash
 cargo install --path .
 ```
-
-## Example
-<img src="https://i.imgur.com/fFEbA20.gif">
